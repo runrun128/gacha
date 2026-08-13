@@ -21,6 +21,7 @@ const cookieOptions = {
   sameSite: "none" as const,
   secure: true,
   maxAge: 30 * 24 * 60 * 60 * 1000,
+  path: "/",
 };
 
 authRouter.post("/register", async (req, res) => {
