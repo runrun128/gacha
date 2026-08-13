@@ -25,24 +25,38 @@ const cookieOptions = {
 
 authRouter.post("/register", async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
+
   if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.issues[0]?.message ?? "入力内容が不正です。" });
+    return res.status(400).json({
+      error: parsed.error.issues[0]?.message ?? "入力内容が不正です。",
+    });
   }
+
   const { email, password, displayName, adminCode } = parsed.data;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await prisma.user.findUnique({
+    where: { email },
+  });
+
   if (existing) {
-    return res.status(409).json({ error: "このメールアドレスは既に登録されています。" });
+    return res.status(409).json({
+      error: "このメールアドレスは既に登録されています。",
+    });
   }
 
   if (adminCode && adminCode !== env.adminSignupCode) {
-    return res.status(400).json({ error: "運営コードが正しくありません。" });
+    return res.status(400).json({
+      error: "運営コードが正しくありません。",
+    });
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
   const userCount = await prisma.user.count();
+
   // 最初の登録者、または正しい運営コードを入力した場合に管理者になる
-  const isAdmin = userCount === 0 || (!!adminCode && adminCode === env.adminSignupCode);
+  const isAdmin =
+    userCount === 0 ||
+    (!!adminCode && adminCode === env.adminSignupCode);
 
   const user = await prisma.user.create({
     data: {
@@ -55,13 +69,18 @@ authRouter.post("/register", async (req, res) => {
   });
 
   const token = signToken({ userId: user.id });
+
+  // 従来のCookie認証も残す
   res.cookie(env.cookieName, token, cookieOptions);
+
+  // JWTもフロントに返す
   res.status(201).json({
     id: user.id,
     email: user.email,
     displayName: user.displayName,
     role: user.role,
     money: user.money,
+    token,
   });
 });
 
@@ -72,43 +91,98 @@ const loginSchema = z.object({
 
 authRouter.post("/login", async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
+
   if (!parsed.success) {
-    return res.status(400).json({ error: "メールアドレスとパスワードを入力してください。" });
+    return res.status(400).json({
+      error: "メールアドレスとパスワードを入力してください。",
+    });
   }
+
   const { email, password } = parsed.data;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    return res.status(401).json({ error: "メールアドレスまたはパスワードが正しくありません。" });
+    return res.status(401).json({
+      error: "メールアドレスまたはパスワードが正しくありません。",
+    });
   }
 
   const token = signToken({ userId: user.id });
+
+  // 従来のCookie認証も残す
   res.cookie(env.cookieName, token, cookieOptions);
-  res.json({ id: user.id, email: user.email, displayName: user.displayName, role: user.role, money: user.money });
+
+  // JWTもフロントに返す
+  res.json({
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    role: user.role,
+    money: user.money,
+    token,
+  });
 });
 
 authRouter.post("/logout", (_req, res) => {
   const { maxAge: _maxAge, ...clearOptions } = cookieOptions;
+
   res.clearCookie(env.cookieName, clearOptions);
+
   res.status(204).end();
 });
 
 authRouter.get("/me", requireAuth, async (req, res) => {
-  const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
-  if (!user) return res.status(401).json({ error: "ログインが必要です。" });
-  res.json({ id: user.id, email: user.email, displayName: user.displayName, role: user.role, money: user.money });
+  const user = await prisma.user.findUnique({
+    where: { id: req.user!.id },
+  });
+
+  if (!user) {
+    return res.status(401).json({
+      error: "ログインが必要です。",
+    });
+  }
+
+  res.json({
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    role: user.role,
+    money: user.money,
+  });
 });
 
-const promoteSchema = z.object({ code: z.string().min(1) });
+const promoteSchema = z.object({
+  code: z.string().min(1),
+});
 
 authRouter.post("/promote", requireAuth, async (req, res) => {
   const parsed = promoteSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: "運営コードを入力してください。" });
 
-  if (parsed.data.code !== env.adminSignupCode) {
-    return res.status(403).json({ error: "運営コードが正しくありません。" });
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: "運営コードを入力してください。",
+    });
   }
 
-  const user = await prisma.user.update({ where: { id: req.user!.id }, data: { role: "admin" } });
-  res.json({ id: user.id, email: user.email, displayName: user.displayName, role: user.role, money: user.money });
+  if (parsed.data.code !== env.adminSignupCode) {
+    return res.status(403).json({
+      error: "運営コードが正しくありません。",
+    });
+  }
+
+  const user = await prisma.user.update({
+    where: { id: req.user!.id },
+    data: { role: "admin" },
+  });
+
+  res.json({
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    role: user.role,
+    money: user.money,
+  });
 });

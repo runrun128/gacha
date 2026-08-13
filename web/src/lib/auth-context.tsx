@@ -50,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     await api.post("/auth/logout");
+    localStorage.removeItem("identity_slot_token");
     setUser(null);
   }
 
