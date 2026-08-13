@@ -18,8 +18,8 @@ const registerSchema = z.object({
 
 const cookieOptions = {
   httpOnly: true,
-  sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
+  sameSite: "none" as const,
+  secure: true,
   maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
