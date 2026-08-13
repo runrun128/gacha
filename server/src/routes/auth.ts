@@ -16,14 +16,6 @@ const registerSchema = z.object({
   adminCode: z.string().optional(),
 });
 
-const cookieOptions = {
-  httpOnly: true,
-  sameSite: "none" as const,
-  secure: true,
-  maxAge: 30 * 24 * 60 * 60 * 1000,
-  path: "/",
-};
-
 authRouter.post("/register", async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
 
@@ -52,9 +44,9 @@ authRouter.post("/register", async (req, res) => {
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
+
   const userCount = await prisma.user.count();
 
-  // 最初の登録者、または正しい運営コードを入力した場合に管理者になる
   const isAdmin =
     userCount === 0 ||
     (!!adminCode && adminCode === env.adminSignupCode);
@@ -69,19 +61,19 @@ authRouter.post("/register", async (req, res) => {
     },
   });
 
-  const token = signToken({ userId: user.id });
+  const token = signToken({
+    userId: user.id,
+  });
 
-  // 従来のCookie認証も残す
-  res.cookie(env.cookieName, token, cookieOptions);
-
-  // JWTもフロントに返す
   res.status(201).json({
-    id: user.id,
-    email: user.email,
-    displayName: user.displayName,
-    role: user.role,
-    money: user.money,
     token,
+    user: {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role,
+      money: user.money,
+    },
   });
 });
 
@@ -111,27 +103,23 @@ authRouter.post("/login", async (req, res) => {
     });
   }
 
-  const token = signToken({ userId: user.id });
+  const token = signToken({
+    userId: user.id,
+  });
 
-  // 従来のCookie認証も残す
-  res.cookie(env.cookieName, token, cookieOptions);
-
-  // JWTもフロントに返す
   res.json({
-    id: user.id,
-    email: user.email,
-    displayName: user.displayName,
-    role: user.role,
-    money: user.money,
     token,
+    user: {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      role: user.role,
+      money: user.money,
+    },
   });
 });
 
 authRouter.post("/logout", (_req, res) => {
-  const { maxAge: _maxAge, ...clearOptions } = cookieOptions;
-
-  res.clearCookie(env.cookieName, clearOptions);
-
   res.status(204).end();
 });
 

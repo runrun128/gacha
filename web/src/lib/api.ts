@@ -18,9 +18,9 @@ async function request<T>(
   }
 
   const res = await fetch(`${BASE}${path}`, {
-    credentials: "include",
-    headers,
     ...options,
+    credentials: "omit",
+    headers,
   });
 
   if (res.status === 204) {
@@ -41,17 +41,9 @@ async function request<T>(
 export const api = {
   get: <T>(path: string) => request<T>(path),
 
-  post: async <T>(path: string, data?: unknown) => {
-    const result = await request<T & { token?: string }>(path, {
+  post: <T>(path: string, data?: unknown) =>
+    request<T>(path, {
       method: "POST",
-      body: data ? JSON.stringify(data) : undefined,
-    });
-
-    // ログイン・登録時に返ってきたJWTを保存
-    if (result.token) {
-      localStorage.setItem("identity_slot_token", result.token);
-    }
-
-    return result as T;
-  },
+      body: data !== undefined ? JSON.stringify(data) : undefined,
+    }),
 };
