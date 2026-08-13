@@ -1,4 +1,4 @@
-const BASE = "/api";
+const BASE = "https://gacha-server-yt5w.onrender.com/api";
 
 export class ApiError extends Error {}
 
