@@ -33,7 +33,9 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const socket = io({ withCredentials: true });
+    const socket = io("https://gacha-server-yt5w.onrender.com", {
+  withCredentials: true
+});
     socketRef.current = socket;
 
     socket.on("connect", () => setConnected(true));
