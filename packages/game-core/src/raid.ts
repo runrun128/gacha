@@ -21,7 +21,7 @@ export const RAID_CHARACTER_SELECT_TIMEOUT_MS = 60_000;
 // ラウンド結果(参加者の行動+ボスの行動)を見せてから次のラウンドを開始するまでの間
 export const RAID_ROUND_INTERMISSION_MS = 3_000;
 
-export type BossKey = "gehenna" | "lilith" | "varga" | "voltex" | "arachne" | "shade";
+export type BossKey = "gehenna" | "lilith" | "varga" | "voltex" | "arachne" | "shade" | "chronos";
 
 export interface BossDef {
   key: BossKey;
@@ -181,6 +181,41 @@ export const BOSSES: Record<BossKey, BossDef> = {
     curseMoveQuote: "「弱くなれ…」",
     curseMoveChance: 22,
   },
+  chronos: {
+    key: "chronos",
+    name: "時喰らいのクロノス",
+    emoji: "⏳",
+    color: "#8E7CC3",
+
+    hp: 620,
+    atk: 28,
+    def: 25,
+    spd: 23,
+
+    desc:
+      "時間を喰らう異形の王。通常攻撃時に一定確率で「時蝕」を発生させ、" +
+      "対象の攻撃力を低下させる。HPが40%を切ると時間加速状態となり、" +
+      "攻撃力が上昇する。",
+
+    specialName: "時の崩壊",
+
+    attackQuotes: [
+      "「時間は、有限だ。」",
+      "「一秒を奪おう。」",
+      "「遅すぎる。」",
+      "「未来など存在しない。」",
+    ],
+
+    specialQuote:
+      "「全ての時間よ、ここで終われ――時の崩壊!!」",
+
+    curseMoveName: "時蝕",
+    curseMoveQuote: "「その時間を、私に寄越せ。」",
+    curseMoveChance: 25,
+
+    enrageThreshold: 0.4,
+    enrageMultiplier: 1.35,
+  },
 };
 
-export const BOSS_ORDER: BossKey[] = ["gehenna", "lilith", "varga", "voltex", "arachne", "shade"];
+export const BOSS_ORDER: BossKey[] = ["gehenna", "lilith", "varga", "voltex", "arachne", "shade", "chronos"];
